@@ -8,6 +8,7 @@ const util = require('util');
 const User = require('../db/schemas');
 const googleStrategy = require('passport-google-oauth2').Strategy;
 const GithubStrategy = require("passport-github2").Strategy;
+const FacebookStrategy = require("passport-facebook").Strategy;
 
 
 const CLIENT_URL = "http://localhost:3000/app";
@@ -32,12 +33,15 @@ passport.use(new googleStrategy({
   userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
 },
   function (accessToken, refreshToken, profile, cb) {
-    console.log(profile);
 
+    // console.log(profile);
+    // console.log(profile.id, profile.sub, profile.displayName);
+    
     User.findOrCreate({ googleId: profile.id, username: profile.sub, name: profile.displayName }, function (err, user) {
-     // console.log(req.session);
+      console.log(err, user, "done");
       cb(err, user);
     });
+    // console.log("done");
   }
 ));
 
@@ -57,6 +61,22 @@ passport.use(
   )
 );
 
+passport.use(new FacebookStrategy({
+  clientID: process.env.FACEBOOK_APP_ID,
+  clientSecret: process.env.FACEBOOK_APP_SECRET,
+  callbackURL: "/auth/facebook/callback"
+},
+function(accessToken, refreshToken, profile, done) {
+  console.log(profile, "fb")
+  // User.findOrCreate({ facebookId: profile.id, username: profile.sub, name: profile.displayName }, function (err, user) {
+  //   cb(err, user);
+  // });
+  done(null, profile);
+}
+));
+
+
+
 
 router.get('/auth/google',
   passport.authenticate('google', { scope: ["profile"] })
@@ -68,7 +88,6 @@ router.get('/google/auth/callback',
     successRedirect: CLIENT_URL
   }),
   (req, res)=>{
-    console.log(req)
   }
   
 )
@@ -84,6 +103,18 @@ router.get('/auth/github/callback',
   }),
   (req, res) => res.json('Logged In')
 )
+
+router.get('/auth/facebook',
+  passport.authenticate('facebook', { scope: ["profile"] })
+);
+router.get('/auth/facebook/callback',
+  passport.authenticate('facebook', { 
+    failureRedirect: '/login', 
+    successRedirect: CLIENT_URL 
+  }),
+  (req, res)=>{
+    console.log(req)
+  });
 
 router.get('/logout', (req, res) => {
   req.logOut(err=>{

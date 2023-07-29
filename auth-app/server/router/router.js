@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const router = express.Router();
+const fs = require("fs");
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const util = require('util');
@@ -43,10 +44,10 @@ passport.serializeUser(function (user, done) {
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
   },
     function (accessToken, refreshToken, profile, cb) {
-      console.log(profile);
+      console.log(profile.id);
   
       User.findOrCreate({ googleId: profile.id, username: profile.sub, name: profile.displayName }, function (err, user) {
-       // console.log(req.session);
+      //  console.log(req.session);
         cb(err, user);
       });
     }
